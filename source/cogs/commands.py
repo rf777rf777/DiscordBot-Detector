@@ -2,7 +2,7 @@ import discord
 from discord.ext import commands
 import io, aiohttp
 from PIL import Image
-from modules.yolov8_service import yolov8_service
+from modules.detect_service import yolov8_service
 
 class Commands(commands.Cog):
     def __init__(self, bot):
@@ -27,8 +27,8 @@ class Commands(commands.Cog):
             await ctx.send(embed=getMessageEmbed(f"{item.filename}: Detecting"))
             
             #Read image data
-            img_data = await download_attachment(item.url)        
-
+            img_data = await item.read()
+            
             #Get PIL image
             try:                      
                 image = Image.open(io.BytesIO(img_data))
@@ -58,11 +58,6 @@ async def detect_image_context(interaction: discord.Interaction, message: discor
     if not message.attachments:   
         await interaction.response.send_message(embed=getMessageEmbed("No Picture to Detect"), ephemeral=True)      
         return
-    
-    #cog = interaction.client.get_cog("Commands")
-    #if cog:
-        #await interaction.response.send_message(content="Testing", ephemeral=True)
-        #await cog.detect(interaction, message)
             
     all_detect_result_stream: list[io.BytesIO] = []
     
@@ -75,7 +70,7 @@ async def detect_image_context(interaction: discord.Interaction, message: discor
         await interaction.followup.send(embed=getMessageEmbed(f"{item.filename}: Detecting"))
             
         #Read image data
-        img_data = await download_attachment(item.url)        
+        img_data = await item.read()        
         print("img_data read done!")
         #Get PIL image
         try:                      
@@ -122,16 +117,3 @@ def getMessageEmbed(message:str, icon:str="🔊") -> discord.Embed:
         description=f"{icon} {message}",
         color=discord.Color.from_rgb(184, 134, 11)
     )
-    
-async def download_attachment(url, chunk_size=1024, timeout=60):
-    """分塊下載附件，避免大文件下載卡頓"""
-    data = bytearray()
-    timeout_settings = aiohttp.ClientTimeout(total=timeout)
-    async with aiohttp.ClientSession(timeout=timeout_settings) as session:
-        async with session.get(url) as response:
-            while True:
-                chunk = await response.content.read(chunk_size)
-                if not chunk:
-                    break
-                data.extend(chunk)
-    return bytes(data)
