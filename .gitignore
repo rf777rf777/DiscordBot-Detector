@@ -1,0 +1,5 @@
+.DS_Store
+__pycache__/
+venv
+configs/config.json
+/build/outputs
