@@ -3,3 +3,4 @@ __pycache__/
 venv
 configs/config.json
 /build/outputs
+source/convert.py
