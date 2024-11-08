@@ -1,8 +1,9 @@
 import discord
 from discord.ext import commands
-import io, aiohttp
+import io
 from PIL import Image
 from modules.detect_service import yolov8_service
+from typing import List
 
 class Commands(commands.Cog):
     def __init__(self, bot):
@@ -12,45 +13,6 @@ class Commands(commands.Cog):
     async def hello(self, ctx):
         await ctx.send('Hello from command!') 
         await self.bot.reload_extension("cogs.commands")  
-          
-    @commands.command('d')
-    async def detect(self, ctx):
-        #Check attachments
-        if not ctx.message.attachments:         
-            await ctx.send(embed=getMessageEmbed(f"Please upload an image."))
-            return
-        
-        all_detect_result_stream: list[io.BytesIO] = []
-        for item in ctx.message.attachments:
-            if not isImageFile(item.filename):
-                continue
-            await ctx.send(embed=getMessageEmbed(f"{item.filename}: Detecting"))
-            
-            #Read image data
-            img_data = await item.read()
-            
-            #Get PIL image
-            try:                      
-                image = Image.open(io.BytesIO(img_data))
-                if isPNGFile(item.filename):
-                    image = image.convert('RGB') #if there are 4 channels(RGBA) covert to 3 channels(RGB)
-            except:    
-                await ctx.send(embed=getMessageEmbed(f"{item.filename}: Get PIL error", "⛔"))    
-                continue
-
-            result_stream = yolov8_service().detect_object_info(image, item.filename)
-            if result_stream is None:
-                #await ctx.send(embed=getMessageEmbed(f"{item.filename}: Detected nothing", "😓"))
-                continue  
-
-            all_detect_result_stream.append(result_stream)
-
-        if len(all_detect_result_stream) <= 0:
-            await ctx.send(embed=getMessageEmbed(f"{item.filename}: Detected nothing", "😓"))
-            return
-
-        files = [discord.File(fp=stream, filename=f'detected_{i}.jpg') for i, stream in enumerate(all_detect_result_stream)]
-        await ctx.send(embed=getMessageEmbed("Detected", "😎"), files=files)   
 
 @discord.app_commands.context_menu(name="Detect Images")
 async def detect_image_context(interaction: discord.Interaction, message: discord.Message):
@@ -59,7 +21,7 @@ async def detect_image_context(interaction: discord.Interaction, message: discor
         await interaction.response.send_message(embed=getMessageEmbed("No Picture to Detect"), ephemeral=True)      
         return
             
-    all_detect_result_stream: list[io.BytesIO] = []
+    all_detect_result_stream: List[io.BytesIO] = []
     
     await interaction.response.defer()
 

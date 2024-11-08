@@ -3,6 +3,7 @@ import tensorflow_hub as hub
 import tf_keras as keras
 import numpy as np
 import pandas as pd
+from typing import List
 
 #Create a function for preprocessing images
 def process_image_from_bytes(file_bytes, img_size=224):
@@ -37,7 +38,7 @@ def load_model(model_path):
 loaded_model = load_model('modules/models/dogvision/dogVision.h5')
 
 
-def get_dogs_breed(contents: list[bytes]) -> list[str]:
+def get_dogs_breed(contents: List[bytes]) -> List[str]:
     labels = []
     custom_predictions = loaded_model.predict(create_data_batches(contents), verbose=1)
     for i in custom_predictions:
